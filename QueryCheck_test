@@ -1,0 +1,31 @@
+#! /bin/bash
+## クエリチェック
+## Usage: QueryCheck.sh or QueryCheck.sh querynumbers
+
+LANG="ja_JP.UTF-8"
+SQLPARSER="../AnalysisSQLValidation"
+PSQL="/opt/homebrew/opt/postgresql@12/bin/psql"
+#PSQL="C:/Program Files/PostgreSQL/12/bin/psql"
+export LANG
+
+DEFAULT_FILES="../CONNECTAnalysis/query/PJ0000000000_QR000B*.sql"
+PREFIX="../CONNECTAnalysis/query/"
+
+# 引数が指定されている場合、それらをFILES変数に格納する
+if [ "$#" -gt 0 ]; then
+    for file in "$@"; do
+        FILES+="${PREFIX}PJ0000000000_QR000B${file}0010000_999_1.sql "
+    done
+# 引数が指定されていない場合、ワイルドカードをFILES変数に格納する
+else
+  FILES=$DEFAULT_FILES
+fi
+
+pushd ${SQLPARSER}
+for query in ${FILES}
+do java -jar target/SQLParserTest-0.1-SNAPSHOT-jar-with-dependencies.jar $query
+done
+for query in ${FILES}
+do env PGPASSWORD=mokadaPGSQL PGCLIENTENCODING=UTF8 "${PSQL}" -h localhost -p 15432 -U postgres -f $query ONCOLOGY_CONNECT 
+done
+popd
